@@ -1,4 +1,6 @@
 /*
+ * Copyright 2022 Matt Palmer.  All rights reserved.
+ *
  * This is an implementation of the HashChain algorithm, (currently unpublished) by Matt Palmer.
  *
  * It is written to integrate with the SMART string search benchmarking tool, by Simone Faro and Thierry Lecroq.
