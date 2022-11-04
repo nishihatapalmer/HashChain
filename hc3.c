@@ -21,7 +21,7 @@
 #define S1    3     // bit shift for each of the anchor hash bytes.
 #define S2    4     // rolling hash shift.  smaller values create longer hash chains.
 #define S3    1     // bit shift for each of the chain hash bytes.
-#define ASIZE 16384 // Must be a power of two size, minimum size is 32.
+#define ASIZE 2048 // Must be a power of two size, minimum size is 32.
 
 #define TABLE_MASK (ASIZE - 1) // mask for table is one less than the power of two size.
 
