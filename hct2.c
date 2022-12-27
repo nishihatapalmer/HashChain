@@ -64,16 +64,16 @@
  * Functions and calculated parameters.
  * Hash functions must be written to use the number of bytes defined in Q. They scan backwards from the initial position.
  */
-#define HASH(x, p, s)     ((((x)[(p)]) << (s)) + ((x)[(p) - 1]))   // General hash function using a bitshift for each byte added.
-#define ANCHOR_HASH(x, p) HASH((x), (p), (S1))                     // Hash function for anchor hashes, using the S1 bitshift.
-#define CHAIN_HASH(x, p)  HASH((x), (p), (S3))                     // Hash function for chain hashes, using the S3 bitshift.
-#define FINGERPRINT(H)    (1U << ((H) & 0x1F))                     // Hash fingerprint, taking low 5 bits of the hash to set one of 32 bits.
-#define TABLE_MASK        ((ASIZE) - 1)                            // Mask for table is one less than the power of two size.
-#define END_FIRST_QGRAM   ((Q) - 1)                                // Position of the end of the first q-gram.
-#define END_SECOND_QGRAM  (2 * (Q) - 1)                            // Position of the end of the second q-gram.
-#define CEIL_DIV(n, d)    ((int) ceil((double) (n) / (d)))         // Returns the integer ceiling division of numerator and denominator.
-#define CHAIN_LENGTH      ((CEIL_DIV(log2(ASIZE), (S2)) + 1) * (Q) // Length required to synchronise with the rolling hash chain.
-#define HM_LENGTH         ((CEIL_DIV(32, (S2)) * Q)                // Length required to obtain Hm value for a 32 bit rolling hash.
+#define HASH(x, p, s)     ((((x)[(p)]) << (s)) + ((x)[(p) - 1]))    // General hash function using a bitshift for each byte added.
+#define ANCHOR_HASH(x, p) HASH((x), (p), (S1))                      // Hash function for anchor hashes, using the S1 bitshift.
+#define CHAIN_HASH(x, p)  HASH((x), (p), (S3))                      // Hash function for chain hashes, using the S3 bitshift.
+#define FINGERPRINT(H)    (1U << ((H) & 0x1F))                      // Hash fingerprint, taking low 5 bits of the hash to set one of 32 bits.
+#define TABLE_MASK        ((ASIZE) - 1)                             // Mask for table is one less than the power of two size.
+#define END_FIRST_QGRAM   ((Q) - 1)                                 // Position of the end of the first q-gram.
+#define END_SECOND_QGRAM  (2 * (Q) - 1)                             // Position of the end of the second q-gram.
+#define CEIL_DIV(n, d)    ((int) ceil((double) (n) / (d)))          // Returns the integer ceiling division of numerator and denominator.
+#define CHAIN_LENGTH      ((CEIL_DIV(log2(ASIZE), (S2)) + 1) * (Q)) // Length required to synchronise with the rolling hash chain.
+#define HM_LENGTH         ((CEIL_DIV(32, (S2)) * Q)                 // Length required to obtain Hm value for a 32 bit rolling hash.
 //TODO; define min length to calculate Hm.
 
 /*
@@ -142,8 +142,28 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
         H = ANCHOR_HASH(y, pos);
         V = B[H & TABLE_MASK];
 
-        if (V) { // If the hash entry is not empty, we have a potential match for the anchor hash
+        if (V)
+        { // If the hash entry is not empty, we have a potential match for the anchor hash
 
+
+            const int end_first_qgram_pos = pos - MQ;
+            while (pos >= end_first_qgram_pos + Q)
+            {
+                pos -= Q;
+                H = (H << S2) + CHAIN_HASH(y, pos);
+                if (!(V & FINGERPRINT(H))) break;
+                V = B[H & TABLE_MASK];
+            }
+
+            if (H == Hm && memcmp(y + end_first_qgram_pos - Q + 1, x, m) == 0)
+            {
+                count++;
+            }
+
+            pos = end_first_qgram_pos;
+
+
+            /*
             //TODO: rewrite with loops.
             const int endFirstQgram = pos - MQ;
             chain:
@@ -162,6 +182,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
                 }
                 pos = endFirstQgram;
             }
+                */
         }
 
         pos += MQ1;
