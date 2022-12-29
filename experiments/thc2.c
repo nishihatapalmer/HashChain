@@ -13,9 +13,9 @@
  * in the chain.  We can then check whether the next hash probably exists in the chain without incurring another index lookup.
  */
 
-#include "include/define.h"
-#include "include/log2.h"
-#include "include/main.h"
+#include "../include/define.h"
+#include "../include/log2.h"
+#include "../include/main.h"
 
 #define	Q     2     // qgram length.
 #define S1    3     // bit shift for each of the anchor hash bytes.
@@ -99,6 +99,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
     /* Preprocessing */
     BEGIN_PREPROCESSING
     Hm = preprocessing(x, m, B); // Hm is the total hash of processing the entire pattern back from the end to the start.
+    for (int i = 0; i < m; i++) y[n + i] = x[i]; // copy pattern to end of text.
     END_PREPROCESSING
 
     /* Searching */
@@ -106,9 +107,17 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
     int count = 0;
     int pos = m - 1;
     while (pos < n) {
-        H = ANCHOR_HASH(y, pos);
-        V = B[H & TABLE_MASK];
-        if (V) { // If the hash entry is not empty, we have a potential match for the anchor hash
+        // Skip ahead quickly without needing a position check as long as there is no hit.
+        // We are guaranteed to stop if it hits the copy of the pattern placed after the end of the text.
+        //while (!((V = B[(H = ANCHOR_HASH(y, pos)) & TABLE_MASK]))) pos += MQ1;
+        while (!((B[ANCHOR_HASH(y, pos) & TABLE_MASK]))) pos += MQ1;
+
+        // As long as we're not past the end of the text:
+        if (pos < n)
+        {
+            H = ANCHOR_HASH(y, pos);
+            V = B[H & TABLE_MASK];
+
             const int end_second_qgram_pos = pos - MQQ;
             chain:
             // As long as we're not before the end of the second qgram, we can move back Q and then read back Q bytes back from there safely.
@@ -126,26 +135,6 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
                     count++;
                 }
             }
-
-            /*
-            const int endFirstQgram = pos - MQ;
-            chain:
-            // As long as we're not before the end of the second qgram, we can move back Q and then read back Q bytes back from there safely.
-            if (pos >= endFirstQgram + Q) {
-                pos -= Q;
-                H = (H << S2) + CHAIN_HASH(y, pos);
-                if (V & FINGERPRINT(H)) {  // if next address fingerprint is in our current value,
-                    V = B[H & TABLE_MASK]; // get the next value.
-                    goto chain;            // and go round again.
-                }
-                // Did not find fingerprint of next hash - there is no match.  Drop through to pos += MQ1 and go round the main loop again.
-            } else { // We read back as far as we can.  Check that the rolling hash equals Hm and if so, verify a match.
-                if (H == Hm && memcmp(y + endFirstQgram - Q + 1, x, m) == 0) {
-                    count++;
-                }
-                pos = endFirstQgram;
-            }
-             */
         }
         pos += MQ1;
     }

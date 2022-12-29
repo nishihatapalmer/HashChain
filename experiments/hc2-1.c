@@ -14,8 +14,8 @@
  * in the chain.  We can then check whether the next hash probably exists in the chain without incurring another index lookup.
  */
 
-#include "include/define.h"
-#include "include/main.h"
+#include "../include/define.h"
+#include "../include/main.h"
 #include "math.h"
 
 //TODO: quantify limits on pattern sizes etc. by which these values were derived.
@@ -125,6 +125,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
     if (m < Q) return -1;  // have to be at least Q in length to search.
 
     const int MQ  = m - Q;
+    const int MQQ = MQ - Q;
     const int MQ1 = MQ + 1;
     unsigned int H, Hm, V, B[ASIZE];
 
@@ -142,16 +143,76 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
         H = ANCHOR_HASH(y, pos);
         V = B[H & TABLE_MASK];
 
+        //TODO: assumption that pattern is at least 2 * Q in length help?  Would always be one chain.
+        //      Deal with < 2 * Q as a special case?
+
         if (V)
         { // If the hash entry is not empty, we have a potential match for the anchor hash
 
+            const int end_second_qgram_pos = pos - MQQ;
+            while (1)
+            {
+                if (pos >= end_second_qgram_pos) {
+                    pos -= Q;
+                    H = (H << S2) + CHAIN_HASH(y, pos);
+                    if (!(V & FINGERPRINT(H))) break;  // no fingerprint - end chain and continue main loop.
+                    V = B[H & TABLE_MASK]; // get the next value.
+                }
+                else // We read back as far as we can.  Check that the rolling hash equals Hm and if so, verify a match.
+                {
+                    pos = end_second_qgram_pos - Q;
+                    if (H == Hm && memcmp(y + pos - Q + 1, x, m) == 0) {
+                        count++;
+                    }
+                    break;
+                }
+            }
 
+            /*
+            //ASSUME m >= 2 * Q, so we can safely subtract Q without another test.
+            const int end_first_qgram_pos = pos - MQ;
+            for (pos -= Q; pos >= end_first_qgram_pos + Q; pos -= Q)
+            {
+                H = (H << S2) + CHAIN_HASH(y, pos);
+                if (!(V & FINGERPRINT(H))) break;  // really want to break to main loop from here.
+                V = B[H & TABLE_MASK];
+            }
+
+            if (pos < end_first_qgram_pos)
+            {
+                pos = end_first_qgram_pos;
+                if (H == Hm && memcmp(y + pos - Q + 1, x, m) == 0)
+                {
+                    count++;
+                }
+            }
+
+             */
+
+            /*
+            const int end_second_qgram_pos = pos - MQQ;
+            while (pos >= end_second_qgram_pos)
+            {
+                pos -= Q;
+                H = (H << S2) + CHAIN_HASH(y, pos);
+                if (!(V & FINGERPRINT(H))) break;  // really want to break to label.
+                V = B[H & TABLE_MASK];
+            }
+
+            pos = end_second_qgram_pos - Q;
+            if (H == Hm && memcmp(y + pos - Q + 1, x, m) == 0)
+            {
+                count++;
+            }
+             */
+
+            /*
             const int end_first_qgram_pos = pos - MQ;
             while (pos >= end_first_qgram_pos + Q)
             {
                 pos -= Q;
                 H = (H << S2) + CHAIN_HASH(y, pos);
-                if (!(V & FINGERPRINT(H))) break;
+                if (!(V & FINGERPRINT(H))) break;  // really want to break to label.
                 V = B[H & TABLE_MASK];
             }
 
@@ -159,9 +220,31 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
             {
                 count++;
             }
-
             pos = end_first_qgram_pos;
+            */
 
+
+/*
+            const int end_first_qgram_pos = pos - MQ;
+            while (pos >= end_first_qgram_pos + Q)
+            {
+                pos -= Q;
+                H = (H << S2) + CHAIN_HASH(y, pos);
+                if (!(V & FINGERPRINT(H))) break;  // really want to break to label.
+                V = B[H & TABLE_MASK];
+            }
+
+            if (pos < end_first_qgram_pos + Q) //TODO: not quite correct?  If we break on last one?
+            {
+                if (H == Hm && memcmp(y + end_first_qgram_pos - Q + 1, x, m) == 0)
+                {
+                    count++;
+                }
+
+                pos = end_first_qgram_pos;
+            }
+
+            */
 
             /*
             //TODO: rewrite with loops.

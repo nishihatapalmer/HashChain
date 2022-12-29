@@ -14,8 +14,8 @@
  * in the chain.  We can then check whether the next hash probably exists in the chain without incurring another index lookup.
  */
 
-#include "include/define.h"
-#include "include/main.h"
+#include "../include/define.h"
+#include "../include/main.h"
 #include "math.h"
 
 //TODO: quantify limits on pattern sizes etc. by which these values were derived.
@@ -119,6 +119,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
     if (m < Q) return -1;  // have to be at least Q in length to search.
 
     const int MQ  = m - Q;
+    const int MQQ = MQ - Q;
     const int MQ1 = MQ + 1;
     unsigned int H, Hm, V, B[ASIZE];
 
@@ -138,23 +139,24 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
 
         if (V) { // If the hash entry is not empty, we have a potential match for the anchor hash
 
-            //TODO: rewrite with loops.
-            const int endFirstQgram = pos - MQ;
-            chain:
-            // As long as we're not before the end of the second qgram, we can move back Q and then read back Q bytes back from there safely.
-            if (pos >= endFirstQgram + Q) {
-                pos -= Q;
-                H = CHAIN_HASH(y, pos);
-                if (V & FINGERPRINT(H)) {  // if next address fingerprint is in our current value,
+            //TODO: second qgram construction any faster?
+            const int end_second_qgram_pos = pos - MQQ;
+            while (1)
+            {
+                if (pos >= end_second_qgram_pos) {
+                    pos -= Q;
+                    H = CHAIN_HASH(y, pos);
+                    if (!(V & FINGERPRINT(H))) break;  // no fingerprint - end chain and continue main loop.
                     V = B[H & TABLE_MASK]; // get the next value.
-                    goto chain;            // and go round again.
                 }
-                // Did not find fingerprint of next hash - there is no match.  Drop through to pos += MQ1 and go round the main loop again.
-            } else { // We read back as far as we can.  Check that the rolling hash equals Hm and if so, verify a match.
-                if (H == Hm && memcmp(y + endFirstQgram - Q + 1, x, m) == 0) {
-                    count++;
+                else // We read back as far as we can.  Check that the rolling hash equals Hm and if so, verify a match.
+                {
+                    pos = end_second_qgram_pos - Q;
+                    if (H == Hm && memcmp(y + pos - Q + 1, x, m) == 0) {
+                        count++;
+                    }
+                    break;
                 }
-                pos = endFirstQgram;
             }
         }
 
