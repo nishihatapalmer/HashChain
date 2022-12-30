@@ -8,7 +8,7 @@
  * placing a fingerprint of the *next* hash into the entry for the *current* hash.  This enables
  * a check for the second hash value to be performed without requiring a second lookup in the hash table.
  *
- * It only creates a single chain of hashes from the end of the pattern back to the start.
+ * It only creates Q chains of hashes from the end of the pattern back to the start.
  * This makes pre-processing much faster than the general hash chain algorithm.
  * It performs badly on low alphabets as it does not use a rolling hash to expand the effective alphabet.
  * It also performs worse on longer patterns than the general algorithm.
