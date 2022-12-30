@@ -105,7 +105,7 @@ inline void search_chain(int *pos, int *count, unsigned int H, unsigned int V, c
 }
 
 /*
- * Searches for a pattern x of length m in a text y of length n and reports the number of occurences found.
+ * Searches for a pattern x of length m in a text y of length n and reports the number of occurrences found.
  */
 int search(unsigned char *x, int m, unsigned char *y, int n) {
     if (m < Q) return -1;  // have to be at least Q in length to search.
