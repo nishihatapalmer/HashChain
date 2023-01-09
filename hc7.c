@@ -70,7 +70,7 @@
 #define HASH(x, p, s)     ((((((((((((x[p] << (s)) + x[p - 1]) << (s)) + x[p - 2]) << (s)) + x[p - 3]) << (s)) + x[p - 4]) << (s)) + x[p - 5]) << (s)) + x[p - 6])
 #define ANCHOR_HASH(x, p) HASH((x), (p), (S1))                      // Hash function for anchor hashes, using the S1 bitshift.
 #define CHAIN_HASH(x, p)  HASH((x), (p), (S3))                      // Hash function for chain hashes, using the S3 bitshift.
-#define FINGERPRINT(H)    (1U << ((H) & 0x1F))                      // Hash fingerprint, taking low 5 bits of the hash to set one of 32 bits.
+#define LINK_HASH(H)      (1U << ((H) & 0x1F))                      // Hash fingerprint, taking low 5 bits of the hash to set one of 32 bits.
 #define TABLE_MASK        (ASIZE - 1)                               // Mask for table is one less than the power of two size.
 #define Q2                (Q + Q)                                   // 2 Qs.
 #define END_FIRST_QGRAM   (Q - 1)                                   // Position of the end of the first q-gram.
@@ -96,7 +96,7 @@ unsigned int preprocessing(const unsigned char *x, int m, unsigned int *B) {
         for (int chain_pos = start_chain; chain_pos >= stop_chain; chain_pos -= Q) {
             unsigned int H_last = H;
             H = (H << S2) + CHAIN_HASH(x, chain_pos);
-            B[H_last & TABLE_MASK] |= FINGERPRINT(H);
+            B[H_last & TABLE_MASK] |= LINK_HASH(H);
         }
     }
 
@@ -107,7 +107,7 @@ unsigned int preprocessing(const unsigned char *x, int m, unsigned int *B) {
     int stop = MIN(m, END_SECOND_QGRAM);
     for (int anchor = END_FIRST_QGRAM; anchor < stop; anchor++) {
         H = ANCHOR_HASH(x, anchor);
-        if (!(B[H & TABLE_MASK])) B[H & TABLE_MASK] = FINGERPRINT(~H);
+        if (!(B[H & TABLE_MASK])) B[H & TABLE_MASK] = LINK_HASH(~H);
     }
 
     // 3. Calculate the 32-bit hash value we check when we need to verify a match.
@@ -118,27 +118,6 @@ unsigned int preprocessing(const unsigned char *x, int m, unsigned int *B) {
         H = (H << S2) + CHAIN_HASH(x, chain_pos);
 
     return H; // Return 32-bit hash value for processing the entire pattern.
-}
-
-/*
- * Searches the chain backwards and verifies a match if it scans back to the start of the pattern.
- */
-inline void search_chain(int *pos, int *count, unsigned int H, unsigned int V, const unsigned int B[ASIZE],
-                         const unsigned char *x, const int m, const unsigned char *y, const unsigned int Hm)
-{
-    const int end_second_qgram_pos = *pos - m + Q2;
-    while (*pos >= end_second_qgram_pos)
-    {
-        *pos -= Q;
-        H = (H << S2) + CHAIN_HASH(y, *pos);
-        if (!(V & FINGERPRINT(H))) return;
-        V = B[H & TABLE_MASK];
-    }
-
-    *pos = end_second_qgram_pos - Q;
-    if (H == Hm && memcmp(y + *pos - END_FIRST_QGRAM, x, m) == 0) {
-        (*count)++;
-    }
 }
 
 /*
@@ -158,10 +137,36 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
     BEGIN_SEARCHING
     int count = 0;
     int pos = m - 1;
+    // While within the search text:
     while (pos < n) {
+
+        // If there is a bit set for the anchor hash:
         H = ANCHOR_HASH(y, pos);
         V = B[H & TABLE_MASK];
-        if (V) search_chain(&pos,  &count, H, V, B, x, m, y, Hm);
+        if (V) {
+
+            // Look at the chain of q-grams that precede it:
+            const int end_second_qgram_pos = pos - m + Q2;
+            while (pos >= end_second_qgram_pos)
+            {
+                pos -= Q;
+                H = (H << S2) + CHAIN_HASH(y, pos);
+                // If we have no match for this chain q-gram, shift and go around the main loop again.
+                // C does not have an explicit "while...else" construct, so we implement it here with a goto
+                // to break out of the loop, avoiding the subsequent verification stage, to proceed straight to shifting.
+                if (!(V & LINK_HASH(H))) goto shift;
+                V = B[H & TABLE_MASK];
+            }
+
+            // Matched the chain all the way back to the start - verify the pattern if the total hash Hm matches as well:
+            pos = end_second_qgram_pos - Q;
+            if (H == Hm && memcmp(y + pos - END_FIRST_QGRAM, x, m) == 0) {
+                (count)++;
+            }
+        }
+
+        // Shift by MQ1 and go around the main loop looking for another anchor hash.
+        shift:
         pos += MQ1;
     }
     END_SEARCHING
