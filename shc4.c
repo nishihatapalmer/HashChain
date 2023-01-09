@@ -99,7 +99,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
     // While within the search text:
     while (pos < n) {
 
-        // If there is a bit set for the anchor hash:
+        // If there is a bit set for the hash:
         H = CHAIN_HASH(y, pos);
         V = B[H & TABLE_MASK];
         if (V) {
@@ -122,7 +122,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
             }
         }
 
-        // Go around the main loop looking for another anchor hash, incrementing the pos by MQ1.
+        // Go around the main loop looking for another hash, incrementing the pos by MQ1.
         shift:
         pos += MQ1;
     }
