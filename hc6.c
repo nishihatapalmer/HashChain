@@ -8,28 +8,14 @@
  * placing a fingerprint of the *next* hash into the entry for the *current* hash.  This enables
  * a check for the second hash value to be performed without requiring a second lookup in the hash table.
  *
- * A rolling hash function is used for each iteration of the chain, which has three main effects:
- *
- * 1) It expands the effective alphabet of the pattern, which makes it work better on lower alphabet data.
- * 2) It creates multiple chains of hashes, which increases the load on the hash table.
- *    Each position in the pattern is an "anchor" hash, which is linked to a chain of q-grams back to the start of the pattern.
- * 3) Because it is a rolling hash, eventually the hash values converge on the same sequences, so we only have to process
- *    part of each chain to ensure a complete set of entries all the way back to the start of the pattern in the hash table.
+ * It creates Q chains of hashes from the end of the pattern back to the start.
  *
  * This implementation is written to integrate with the SMART string search benchmarking tool,
  * by Simone Faro, Matt Palmer, Stefano Stefano Scafiti and Thierry Lecroq.
- */
+*/
 
 #include "include/define.h"
 #include "include/main.h"
-#include "math.h"
-
-/*  Tuning algorithm notes.
- *
- *  - Shorter patterns often benefit most from larger table sizes, as they rely more on blank hash table entries.
- *  - Longer patterns often work better with smaller hash table sizes.  They are not primarily relying on blank
- *    entries for their speed, and can benefit more from having better cache-hits on the hash table.
- */
 
 /*
  * Hash table size.  Must be a power of two, minimum size is 32.
@@ -37,29 +23,13 @@
 #define ASIZE 4096
 
 /*
- * Bit shift for each of the anchor hash byte components.
- * We want to ensure a reasonably good spread and mixing of initial values over the hash table given Q bytes.
- */
-#define S1    2
-
-/*
- * Rolling hash bit-shift.  This shifts the previous hash value over by this number of bits.
- * Lower values give longer hash chains (more entries in the hash table).
- * We find that very long chains do not improve performance, but neither do the shortest chains.
- * Setting to 4 seems to work well.
- */
-#define S2    4
-
-/*
  * Bit shift for each of the chain hash byte components.
- * This is added to the anchor hash, which should already have a fairly good spread of initial values.
- * We find that very low values of this bit shift work best in general, and higher values usually don't.
  */
-#define S3    1
+#define S     2
 
 /*
  * Number of bytes in a q-gram.
- * Anchor and chain hash functions defined below must be written to process this number of bytes.
+ * Chain hash functions defined below must be written to process this number of bytes.
  */
 #define	Q     6
 
@@ -68,15 +38,12 @@
  * Hash functions must be written to use the number of bytes defined in Q. They scan backwards from the initial position.
  */
 #define HASH(x, p, s)     ((((((((((x[p] << (s)) + x[p - 1]) << (s)) + x[p - 2]) << (s)) + x[p - 3]) << (s)) + x[p - 4]) << (s)) + x[p - 5])
-#define ANCHOR_HASH(x, p) HASH((x), (p), (S1))                      // Hash function for anchor hashes, using the S1 bitshift.
-#define CHAIN_HASH(x, p)  HASH((x), (p), (S3))                      // Hash function for chain hashes, using the S3 bitshift.
-#define LINK_HASH(H)    (1U << ((H) & 0x1F))                        // Hash fingerprint, taking low 5 bits of the hash to set one of 32 bits.
-#define TABLE_MASK        (ASIZE - 1)                               // Mask for table is one less than the power of two size.
-#define Q2                (Q + Q)                                   // 2 Qs.
-#define END_FIRST_QGRAM   (Q - 1)                                   // Position of the end of the first q-gram.
-#define END_SECOND_QGRAM  (Q2 - 1)                                  // Position of the end of the second q-gram.
-#define CEIL_DIV(n, d)    ((int) ceil((double) (n) / (d)))          // Returns the integer ceiling division of numerator and denominator.
-#define CHAIN_LENGTH      ((CEIL_DIV(log2(ASIZE), (S2)) + 1) * (Q)) // Length required to synchronise with the rolling hash chain.
+#define CHAIN_HASH(x, p)  HASH((x), (p), (S))                      // Hash function for chain hashes, using the S3 bitshift.
+#define LINK_HASH(H)    (1U << ((H) & 0x1F))                       // Hash fingerprint, taking low 5 bits of the hash to set one of 32 bits.
+#define TABLE_MASK        ((ASIZE) - 1)                            // Mask for table is one less than the power of two size.
+#define Q2                (Q + Q)                                  // 2 Qs.
+#define END_FIRST_QGRAM   (Q - 1)                                  // Position of the end of the first q-gram.
+#define END_SECOND_QGRAM  (Q2 - 1)                                 // Position of the end of the second q-gram.
 
 /*
  * Builds the hash table B of size ASIZE for a string x of length m.
@@ -87,35 +54,27 @@ unsigned int preprocessing(const unsigned char *x, int m, unsigned int *B) {
     // 0. Zero out the hash table.
     for (int i = 0; i < ASIZE; i++) B[i] = 0;
 
-    // 1. Process all the anchor q-grams with q-grams before them.
+    // 1. Calculate all the chain hashes, ending with processing the entire pattern so H has the cumulative value.
     unsigned int H;
-    for (int anchor_pos = END_SECOND_QGRAM; anchor_pos < m; anchor_pos++) {
-        H = ANCHOR_HASH(x, anchor_pos);
-        int start_chain = anchor_pos - Q;
-        int stop_chain = MAX(END_FIRST_QGRAM, start_chain - CHAIN_LENGTH);
-        for (int chain_pos = start_chain; chain_pos >= stop_chain; chain_pos -= Q) {
+    for (int chain_no = Q; chain_no >= 1; chain_no--)
+    {
+        H = CHAIN_HASH(x, m - chain_no);
+        for (int chain_pos = m - chain_no - Q; chain_pos >= END_FIRST_QGRAM; chain_pos -=Q)
+        {
             unsigned int H_last = H;
-            H = (H << S2) + CHAIN_HASH(x, chain_pos);
+            H = CHAIN_HASH(x, chain_pos);
             B[H_last & TABLE_MASK] |= LINK_HASH(H);
         }
     }
 
-    // 2. Process the first q-grams at the start of the pattern that have no preceding q-grams.
-    //    There is no q-gram before them that we can calculate a fingerprint of, to put in their hash table entry.
-    //    However, there is equally no check on its content other than it not being zero.
-    //    If it is currently empty, set it to the fingerprint of the inverse of the current hash value, to avoid pointing back to ourselves.
+    // 2. Add in hashes for the first qgrams that have no preceding value.  Only set a value if there is nothing there already.
+    unsigned int F;
     int stop = MIN(m, END_SECOND_QGRAM);
-    for (int anchor = END_FIRST_QGRAM; anchor < stop; anchor++) {
-        H = ANCHOR_HASH(x, anchor);
-        if (!(B[H & TABLE_MASK])) B[H & TABLE_MASK] = LINK_HASH(~H);
+    for (int chain_pos = END_FIRST_QGRAM; chain_pos < stop; chain_pos++)
+    {
+        F = CHAIN_HASH(x, chain_pos);
+        if (!B[F & TABLE_MASK]) B[F & TABLE_MASK] = LINK_HASH(~F);
     }
-
-    // 3. Calculate the 32-bit hash value we check when we need to verify a match.
-    //    This is the total 32-bit rolling hash value we would see if processing the entire pattern back to the start.
-    int final_pos = m - 1;
-    H = ANCHOR_HASH(x, final_pos);
-    for (int chain_pos = final_pos - Q; chain_pos >= END_FIRST_QGRAM; chain_pos -=Q)
-        H = (H << S2) + CHAIN_HASH(x, chain_pos);
 
     return H; // Return 32-bit hash value for processing the entire pattern.
 }
@@ -140,8 +99,8 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
     // While within the search text:
     while (pos < n) {
 
-        // If there is a bit set for the anchor hash:
-        H = ANCHOR_HASH(y, pos);
+        // If there is a bit set for the hash:
+        H = CHAIN_HASH(y, pos);
         V = B[H & TABLE_MASK];
         if (V) {
 
@@ -150,10 +109,8 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
             while (pos >= end_second_qgram_pos)
             {
                 pos -= Q;
-                H = (H << S2) + CHAIN_HASH(y, pos);
-                // If we have no match for this chain q-gram, shift and go around the main loop again.
-                // C does not have an explicit "while...else" construct, so we implement it here with a goto
-                // to break out of the loop, avoiding the subsequent verification stage, to proceed straight to shifting.
+                H = CHAIN_HASH(y, pos);
+                // If we have no match for this chain q-gram, break out and go around the main loop again:
                 if (!(V & LINK_HASH(H))) goto shift;
                 V = B[H & TABLE_MASK];
             }
@@ -165,7 +122,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
             }
         }
 
-        // Shift by MQ1 and go around the main loop looking for another anchor hash.
+        // Go around the main loop looking for another hash, incrementing the pos by MQ1.
         shift:
         pos += MQ1;
     }
