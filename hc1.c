@@ -18,14 +18,10 @@
 #include "include/main.h"
 
 /*
- * Hash table size.  Must be a power of two, minimum size is 32.
+ * Alpha - the number of bits in the hash table.
+ * When Q = 1, this value cannot be changed.  There are only 256 addressable entries using a single byte to index with.
  */
-#define ASIZE 256 // When Q = 1, only 256 elements are accessible as it indexes with a single byte.
-
-/*
- * Bit shift for each of the chain hash byte components.
- */
-#define S     0  // Unused in the Q = 1 variant as there is only one byte and no shift to make.
+#define ALPHA 8
 
 /*
  * Number of bytes in a q-gram.
@@ -37,9 +33,11 @@
  * Functions and calculated parameters.
  * Hash functions must be written to use the number of bytes defined in Q. They scan backwards from the initial position.
  */
+#define S                 ((ALPHA) / (Q))                          // Unused in the Q = 1 variant as there is only one byte and no shift to make.
 #define HASH(x, p, s)     (x[p])                                   // General hash function using a bitshift for each byte added.
 #define CHAIN_HASH(x, p)  HASH((x), (p), (S))                      // Hash function for chain hashes, using the S3 bitshift.
 #define LINK_HASH(H)      (1U << ((H) & 0x1F))                     // Hash fingerprint, taking low 5 bits of the hash to set one of 32 bits.
+#define ASIZE             (1 << (ALPHA))                           // When Q = 1, only 256 elements are accessible as it indexes with a single byte.
 #define TABLE_MASK        ((ASIZE) - 1)                            // Mask for table is one less than the power of two size.
 #define Q2                (Q + Q)                                  // 2 Qs.
 #define END_FIRST_QGRAM   (Q - 1)                                  // Position of the end of the first q-gram.
