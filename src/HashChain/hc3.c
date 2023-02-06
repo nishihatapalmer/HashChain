@@ -14,8 +14,8 @@
  * by Simone Faro, Matt Palmer, Stefano Stefano Scafiti and Thierry Lecroq.
 */
 
-#include "../include/define.h"
-#include "../include/main.h"
+#include "include/define.h"
+#include "include/main.h"
 
 /*
  * Alpha - the number of bits in the hash table.
@@ -81,6 +81,8 @@ unsigned int preprocessing(const unsigned char *x, int m, unsigned int *B) {
  */
 int search(unsigned char *x, int m, unsigned char *y, int n) {
     if (m < Q) return -1;  // have to be at least Q in length to search.
+    if (m > 4194304) return -1; // very large patterns will seg-fault.
+
     unsigned int H, V, B[ASIZE];
 
     /* Preprocessing */
