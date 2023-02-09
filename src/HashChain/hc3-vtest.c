@@ -84,6 +84,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
     /* Preprocessing */
     BEGIN_PREPROCESSING
     const int MQ1 = m - Q + 1;
+    const int MQ2 = m - Q2;
     preprocessing(x, m, B);
     END_PREPROCESSING
 
@@ -100,7 +101,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
         if (V) {
 
             // Look at the chain of q-grams that precede it:
-            const int end_second_qgram_pos = pos - m + Q2;
+            const int end_second_qgram_pos = pos - MQ2;
             while (pos >= end_second_qgram_pos)
             {
                 pos -= Q;
@@ -113,7 +114,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
             // Matched the chain all the way back to the start - verify the pattern if the total hash Hm matches as well:
             pos = end_second_qgram_pos - Q;
             if (V && memcmp(y + pos - END_FIRST_QGRAM, x, m) == 0) {
-                (count)++;
+                count++;
             }
         }
 
