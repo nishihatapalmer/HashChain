@@ -14,26 +14,26 @@
  * by Simone Faro, Matt Palmer, Stefano Stefano Scafiti and Thierry Lecroq.
 */
 
-#include "include/define.h"
-#include "include/main.h"
+#include "../../HashChain/include/define.h"
+#include "../../HashChain/include/main.h"
 
 /*
  * Alpha - the number of bits in the hash table.
  */
-#define ALPHA 11
+#define ALPHA 12
 
 /*
  * Number of bytes in a q-gram.
  * Chain hash functions defined below must be written to process this number of bytes.
  */
-#define	Q     3
+#define	Q     4
 
 /*
  * Functions and calculated parameters.
  * Hash functions must be written to use the number of bytes defined in Q. They scan backwards from the initial position.
  */
 #define S                 ((ALPHA) / (Q))                          // Bit shift for each of the chain hash byte components.
-#define HASH(x, p, s)     ((((x[p] << (s)) + x[p - 1]) << (s)) + x[p - 2])  // General hash function using a bitshift for each byte added.
+#define HASH(x, p, s)     ((((((x[p] << (s)) + x[p - 1]) << (s)) + x[p - 2]) << (s)) + x[p - 3]) // General hash function using a bitshift for each byte added.
 #define CHAIN_HASH(x, p)  HASH((x), (p), (S))                      // Hash function for chain hashes, using the S3 bitshift.
 #define LINK_HASH(H)      (1U << ((H) & 0x1F))                     // Hash fingerprint, taking low 5 bits of the hash to set one of 32 bits.
 #define ASIZE             (1 << (ALPHA))                           // Hash table size.

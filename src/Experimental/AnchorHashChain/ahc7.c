@@ -26,14 +26,14 @@
  * Number of bytes in a q-gram.
  * Chain hash functions defined below must be written to process this number of bytes.
  */
-#define	Q     8
+#define	Q     7
 
 /*
  * Functions and calculated parameters.
  * Hash functions must be written to use the number of bytes defined in Q. They scan backwards from the initial position.
  */
 #define S                 ((ALPHA) / (Q))                          // Bit shift for each of the chain hash byte components.
-#define HASH(x, p, s)     ((((((((((((((x[p] << (s)) + x[p - 1]) << (s)) + x[p - 2]) << (s)) + x[p - 3]) << (s)) + x[p - 4]) << (s)) + x[p - 5]) << (s)) + x[p - 6]) << (s)) + x[p - 7])
+#define HASH(x, p, s)     ((((((((((((x[p] << (s)) + x[p - 1]) << (s)) + x[p - 2]) << (s)) + x[p - 3]) << (s)) + x[p - 4]) << (s)) + x[p - 5]) << (s)) + x[p - 6])
 #define CHAIN_HASH(x, p)  HASH((x), (p), (S))                      // Hash function for chain hashes, using the S3 bitshift.
 #define LINK_HASH(H)      (1U << ((H) & 0x1F))                     // Hash fingerprint, taking low 5 bits of the hash to set one of 32 bits.
 #define ASIZE             (1 << (ALPHA))                           // Hash table size.
@@ -46,7 +46,7 @@
  * Builds the hash table B of size ASIZE for a string x of length m.
  * Returns the 32-bit hash value of matching the entire pattern.
  */
-void preprocessing(const unsigned char *x, int m, unsigned int *B) {
+unsigned int preprocessing(const unsigned char *x, int m, unsigned int *B) {
 
     // 0. Zero out the hash table.
     for (int i = 0; i < ASIZE; i++) B[i] = 0;
@@ -72,6 +72,8 @@ void preprocessing(const unsigned char *x, int m, unsigned int *B) {
         F = CHAIN_HASH(x, chain_pos);
         if (!B[F & TABLE_MASK]) B[F & TABLE_MASK] = LINK_HASH(~F);
     }
+
+    return H; // Return 32-bit hash value for processing the entire pattern.
 }
 
 /*
@@ -79,13 +81,14 @@ void preprocessing(const unsigned char *x, int m, unsigned int *B) {
  */
 int search(unsigned char *x, int m, unsigned char *y, int n) {
     if (m < Q) return -1;  // have to be at least Q in length to search.
+    if (m > 4194304) return -1; // very large patterns will seg-fault.
+
     unsigned int H, V, B[ASIZE];
 
     /* Preprocessing */
     BEGIN_PREPROCESSING
     const int MQ1 = m - Q + 1;
-    const int MQ2 = m - Q2;
-    preprocessing(x, m, B);
+    const unsigned int Hm = preprocessing(x, m, B);
     END_PREPROCESSING
 
     /* Searching */
@@ -101,7 +104,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
         if (V) {
 
             // Look at the chain of q-grams that precede it:
-            const int end_second_qgram_pos = pos - MQ2;
+            const int end_second_qgram_pos = pos - m + Q2;
             while (pos >= end_second_qgram_pos)
             {
                 pos -= Q;
@@ -113,8 +116,8 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
 
             // Matched the chain all the way back to the start - verify the pattern if the total hash Hm matches as well:
             pos = end_second_qgram_pos - Q;
-            if (V && memcmp(y + pos - END_FIRST_QGRAM, x, m) == 0) {
-                count++;
+            if (H == Hm && memcmp(y + pos - END_FIRST_QGRAM, x, m) == 0) {
+                (count)++;
             }
         }
 
