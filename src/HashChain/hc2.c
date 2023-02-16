@@ -34,7 +34,7 @@
  */
 #define S                 ((ALPHA) / (Q))                          // Bit shift for each of the chain hash byte components.
 #define HASH(x, p, s)     ((((x)[(p)]) << (s)) + ((x)[(p) - 1]))   // General hash function using a bitshift for each byte added.
-#define CHAIN_HASH(x, p)  HASH((x), (p), (S))                      // Hash function for chain hashes, using the S3 bitshift.
+#define CHAIN_HASH(x, p)  HASH((x), (p), (S))                      // Hash function for chain hashes, using the S bitshift.
 #define LINK_HASH(H)      (1U << ((H) & 0x1F))                     // Hash fingerprint, taking low 5 bits of the hash to set one of 32 bits.
 #define ASIZE             (1 << (ALPHA))                           // Hash table size
 #define TABLE_MASK        ((ASIZE) - 1)                            // Mask for table is one less than the power of two size.
@@ -73,7 +73,7 @@ unsigned int preprocessing(const unsigned char *x, int m, unsigned int *B) {
         if (!B[F & TABLE_MASK]) B[F & TABLE_MASK] = LINK_HASH(~F);
     }
 
-    return H; // Return 32-bit hash value for processing the entire pattern.
+    return H; // Return the hash value for processing the last q-gram.
 }
 
 /*
@@ -112,7 +112,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
                 V = B[H & TABLE_MASK];
             }
 
-            // Matched the chain all the way back to the start - verify the pattern if the total hash Hm matches as well:
+            // Matched the chain all the way back to the start - verify the pattern if the hash Hm matches as well:
             pos = end_second_qgram_pos - Q;
             if (H == Hm && memcmp(y + pos - END_FIRST_QGRAM, x, m) == 0) {
                 (count)++;
