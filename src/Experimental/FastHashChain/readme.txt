@@ -1,0 +1,1 @@
+The fast version of Hash Chain uses a fast loop to skip over empty table entries../?
