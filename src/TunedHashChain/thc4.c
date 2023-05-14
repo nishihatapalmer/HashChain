@@ -26,14 +26,14 @@
  * Number of bytes in a q-gram.
  * Chain hash functions defined below must be written to process this number of bytes.
  */
-#define	Q     6
+#define	Q     4
 
 /*
  * Functions and calculated parameters.
  * Hash functions must be written to use the number of bytes defined in Q. They scan backwards from the initial position.
  */
 #define S                 ((ALPHA) / (Q))                          // Bit shift for each of the chain hash byte components.
-#define HASH(x, p, s)     ((((((((((x[p] << (s)) + x[p - 1]) << (s)) + x[p - 2]) << (s)) + x[p - 3]) << (s)) + x[p - 4]) << (s)) + x[p - 5])
+#define HASH(x, p, s)     ((((((x[p] << (s)) + x[p - 1]) << (s)) + x[p - 2]) << (s)) + x[p - 3]) // General hash function using a bitshift for each byte added.
 #define CHAIN_HASH(x, p)  HASH((x), (p), (S))                      // Hash function for chain hashes, using the S bitshift.
 #define LINK_HASH(H)      (1U << ((H) & 0x1F))                     // Hash fingerprint, taking low 5 bits of the hash to set one of 32 bits.
 #define ASIZE             (1 << (ALPHA))                           // Hash table size.
@@ -53,7 +53,8 @@ unsigned int preprocessing(const unsigned char *x, int m, unsigned int *B) {
 
     // 1. Calculate all the chain hashes, ending with processing the entire pattern so H has the cumulative value.
     unsigned int H;
-    for (int chain_no = Q; chain_no >= 1; chain_no--)
+    int last_chain = m < Q2 ? m - END_FIRST_QGRAM : Q;
+    for (int chain_no = last_chain; chain_no >= 1; chain_no--)
     {
         H = CHAIN_HASH(x, m - chain_no);
         for (int chain_pos = m - chain_no - Q; chain_pos >= END_FIRST_QGRAM; chain_pos -=Q)
