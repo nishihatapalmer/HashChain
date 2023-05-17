@@ -116,7 +116,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
 
         // Matched the chain all the way back to the start - verify the pattern if the hash Hm matches as well,
         // and we have not run off the end of the text into the sentinel (pos < n).
-        if (end_second_qgram_pos < n - m + Q2)
+        if (end_second_qgram_pos < n - m + Q2) //TODO: is this bug?  what if m < Q2?
         {
             pos = end_second_qgram_pos - Q;
             if (H == Hm && memcmp(y + pos - END_FIRST_QGRAM, x, m) == 0) {
