@@ -83,23 +83,19 @@
  * It is implemented from the description in "Fast Pattern Matching in Strings" by Knuth, Morris and Pratt, June 1977,
  * with the following differences:
  *  1. Indices are adjusted to be zero-indexed rather than 1-indexed, as in the original paper.
- *  2. The table has an extra entry at position m, so we can continue searching after a match.
+ *  2. The KMP table has an extra entry at position m, so we can continue searching after a match.
  */
 void pre_kmp(unsigned char *x, int m, int KMP[])
 {
     int j = 0;
     int t = -1;
     KMP[0] = -1;
-
     while (j < m - 1) {
-
         while (t >= 0 && x[j] != x[t]) {
             t = KMP[t];
         }
-
         j++;
         t++;
-
         if (x[j] != x[t]) {
             KMP[j] = KMP[t];
         }
@@ -107,7 +103,6 @@ void pre_kmp(unsigned char *x, int m, int KMP[])
             KMP[j] = t;
         }
     }
-
     KMP[m] = t;
 }
 
@@ -159,17 +154,22 @@ unsigned int preprocessing(const unsigned char *x, int m, unsigned int *B) {
 int search(unsigned char *x, int m, unsigned char *y, int n) {
     if (m < Q) return -1;  // have to be at least Q in length to search.
     unsigned int H, V, B[ASIZE];
+    int KMP[m + 1];
 
     /* Preprocessing */
     BEGIN_PREPROCESSING
     const int MQ1 = m - Q + 1;
     const unsigned int Hm = preprocessing(x, m, B);
+    pre_kmp(x, m, KMP);
     END_PREPROCESSING
 
     /* Searching */
     BEGIN_SEARCHING
     int count = 0;
     int pos = m - 1;
+    int rightmost_match = 0;  // The location of the rightmost text scanned with a match for the anchor hash.
+    int next_verify = 0;      // The next position to verify using KMP.
+
     // While within the search text:
     while (pos < n) {
 
@@ -180,6 +180,9 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
 
             // Look at the chain of q-grams that precede it:
             const int end_second_qgram_pos = pos - m + Q2;
+            //const int scan_back_pos = MAX(end_second_qgram_pos, rightmost_match + Q); //TODO: rightmost_match + Q?
+            //rightmost_match = pos;
+            //while (pos >= scan_back_pos)
             while (pos >= end_second_qgram_pos)
             {
                 pos -= Q;
