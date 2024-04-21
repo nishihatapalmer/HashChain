@@ -8,6 +8,11 @@ pattern to be searched, and hashes of their adjacent q-gram.  This permits
 the algorithm to efficiently reject non-adjacent q-grams in the text with
 very high probability, allowing it to skip ahead of the mis-matching factor.
 
+### Publications ###
+A pre-print of the paper describing the HashChain algorithm is available on arXiv at https://arxiv.org/abs/2310.15711v1.
+
+A version of this paper was accepted at the Symposium on Experimental Algorithmics 2024: https://sea2024.univie.ac.at/accepted-papers/
+
 ### Algorithms ###
 Algorithms in the HashChain family include:
 
