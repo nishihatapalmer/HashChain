@@ -18,4 +18,4 @@ In the verification phase, we use a linear forward matching algorithm (KMP)
 to identify matches which will not rescan previously verified positions.
 
 The combination of both techniques ensures that performance remains linear
-in the worst case.
+in the worst case, but is very fast and sublinear on average.
