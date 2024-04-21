@@ -18,4 +18,10 @@ In the verification phase, we use a linear forward matching algorithm (KMP)
 to identify matches which will not rescan previously verified positions.
 
 The combination of both techniques ensures that performance remains linear
-in the worst case, but is very fast and sublinear on average.
+in the worst case, but is very fast and sublinear on average.  
+
+The technique is entirely described in
+*"Linear and Efficient String Matching Algorithms Based on Weak Factor Recognition"*
+by DOMENICO CANTONE and SIMONE FARO, University of Catania
+ARIANNA PAVONE, University of Messina.  This work merely applies the 
+same ideas described there to HashChain.
