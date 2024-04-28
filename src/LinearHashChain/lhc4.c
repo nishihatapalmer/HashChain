@@ -26,20 +26,20 @@
 /*
  * Alpha - the number of bits in the hash table.
  */
-#define ALPHA 11
+#define ALPHA 12
 
 /*
  * Number of bytes in a q-gram.
  * Chain hash functions defined below must be written to process this number of bytes.
  */
-#define	Q     3
+#define	Q     4
 
 /*
  * Functions and calculated parameters.
  * Hash functions must be written to use the number of bytes defined in Q. They scan backwards from the initial position.
  */
 #define S                 ((ALPHA) / (Q))                          // Bit shift for each of the chain hash byte components.
-#define HASH(x, p, s)     ((((x[p] << (s)) + x[p - 1]) << (s)) + x[p - 2])  // General hash function using a bitshift for each byte added.
+#define HASH(x, p, s)     ((((((x[p] << (s)) + x[p - 1]) << (s)) + x[p - 2]) << (s)) + x[p - 3]) // General hash function using a bitshift for each byte added.
 #define CHAIN_HASH(x, p)  HASH((x), (p), (S))                      // Hash function for chain hashes, using the S3 bitshift.
 #define LINK_HASH(H)      (1U << ((H) & 0x1F))                     // Hash fingerprint, taking low 5 bits of the hash to set one of 32 bits.
 #define ASIZE             (1 << (ALPHA))                           // Hash table size.
@@ -47,7 +47,6 @@
 #define Q2                (Q + Q)                                  // 2 Qs.
 #define END_FIRST_QGRAM   (Q - 1)                                  // Position of the end of the first q-gram.
 #define END_SECOND_QGRAM  (Q2 - 1)                                 // Position of the end of the second q-gram.
-
 
 /*
  * Builds the KMP failure table, given a pattern x of length m and a list of integers with m + 1 elements.
@@ -159,7 +158,8 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
                 pattern_pos = 0;
             }
 
-            // The original specification for linear WFR in
+            //TODO: what does this condition signify?  It is unclear even if theoretically sound...
+            //      can it overflow next_verify_pos beyond n?
             while (pattern_pos >= next_verify_pos - window_start_pos) {
 
                 // Naive string matching - how many characters do we match...
