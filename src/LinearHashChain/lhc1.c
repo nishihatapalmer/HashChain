@@ -137,7 +137,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
         if (V) {
             // Calculate how far back to scan and update the right most match pos.
             const int end_first_qgram_pos = pos - m + Q;
-            const int scan_back_pos = MAX(end_first_qgram_pos, rightmost_match_pos) + Q; //TODO: we add Q because the first thing we do is go back Q and then hash back from that.
+            const int scan_back_pos = MAX(end_first_qgram_pos, rightmost_match_pos) + Q;
             rightmost_match_pos = pos;
 
             // Look at the chain of q-grams that precede it:
@@ -158,8 +158,8 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
                 pattern_pos = 0;
             }
 
-            //TODO: what does this condition signify?  It is unclear even if theoretically sound...
-            //      can it overflow next_verify_pos beyond n?
+            // When verifying the pattern, we only continue verifying as long as the amount of pattern verified
+            // is as big or bigger than the size of the window read so far.  So
             while (pattern_pos >= next_verify_pos - window_start_pos) {
 
                 // Naive string matching - how many characters do we match...

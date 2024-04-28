@@ -138,7 +138,7 @@ int search(unsigned char *x, int m, unsigned char *y, int n) {
         if (V) {
             // Calculate how far back to scan and update the right most match pos.
             const int end_first_qgram_pos = pos - m + Q;
-            const int scan_back_pos = MAX(end_first_qgram_pos, rightmost_match_pos) + Q; //TODO: we add Q because the first thing we do is go back Q and then hash back from that.
+            const int scan_back_pos = MAX(end_first_qgram_pos, rightmost_match_pos) + Q;
             rightmost_match_pos = pos;
 
             // Look at the chain of q-grams that precede it:
