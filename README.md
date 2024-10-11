@@ -13,6 +13,8 @@ A pre-print of the paper describing the HashChain algorithm is available on arXi
 
 A version of this paper was accepted at the Symposium on Experimental Algorithmics 2024: https://sea2024.univie.ac.at/accepted-papers/
 
+It is available at https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.SEA.2024.24
+
 ### Algorithms ###
 Algorithms in the HashChain family include:
 
