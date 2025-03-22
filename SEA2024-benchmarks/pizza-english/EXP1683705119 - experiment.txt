@@ -1,0 +1,135 @@
+Experiment code	EXP1683705119
+Creation date time	2023:05:10 08:51:59
+Num runs	500
+Time bound (ms)	200
+Random seed	1683705119
+Pattern minimum length	4
+Pattern maximum length	4096
+Pattern length operator	*
+Pattern length increase by	2
+Algorithm source type	Algorithms in the selected set.
+Selected algo filename	selected_algos
+Data source type	Files
+File or folder	pizza-english
+CPU pinning type	Pin last CPU
+CPU stats	none
+Precision	2
+Show preprocessing	false
+Show occurrences	false
+Fill buffer	false
+Max text length	104857600
+Text length	104857600
+Text minimum character code	9
+Text maximum character code	254
+Text shannon entropy	4.56
+Num algorithms benchmarked	107
+Algorithm benchmarked	aoso2
+Algorithm benchmarked	aoso4
+Algorithm benchmarked	aoso6
+Algorithm benchmarked	bndm
+Algorithm benchmarked	bndmq2
+Algorithm benchmarked	bndmq4
+Algorithm benchmarked	bndmq6
+Algorithm benchmarked	bram3
+Algorithm benchmarked	bram5
+Algorithm benchmarked	bram7
+Algorithm benchmarked	bsdm
+Algorithm benchmarked	bsdm2
+Algorithm benchmarked	bsdm3
+Algorithm benchmarked	bsdm4
+Algorithm benchmarked	bsdm5
+Algorithm benchmarked	bsdm6
+Algorithm benchmarked	bsdm7
+Algorithm benchmarked	bsdm8
+Algorithm benchmarked	bxs
+Algorithm benchmarked	bxs1
+Algorithm benchmarked	bxs2
+Algorithm benchmarked	bxs3
+Algorithm benchmarked	bxs4
+Algorithm benchmarked	bxs6
+Algorithm benchmarked	bxs8
+Algorithm benchmarked	ebom
+Algorithm benchmarked	epsm
+Algorithm benchmarked	fhc1
+Algorithm benchmarked	fhc2
+Algorithm benchmarked	fhc3
+Algorithm benchmarked	fhc4
+Algorithm benchmarked	fhc5
+Algorithm benchmarked	fhc6
+Algorithm benchmarked	fhc7
+Algorithm benchmarked	fhc8
+Algorithm benchmarked	fjs
+Algorithm benchmarked	fsbndmq20
+Algorithm benchmarked	fsbndmq21
+Algorithm benchmarked	fsbndmq31
+Algorithm benchmarked	fsbndmq32
+Algorithm benchmarked	fsbndmq41
+Algorithm benchmarked	fsbndmq42
+Algorithm benchmarked	fsbndmq43
+Algorithm benchmarked	fsbndmq61
+Algorithm benchmarked	fsbndmq62
+Algorithm benchmarked	fsbndmq64
+Algorithm benchmarked	fsbndmq81
+Algorithm benchmarked	fsbndmq82
+Algorithm benchmarked	fsbndmq84
+Algorithm benchmarked	fsbndmq86
+Algorithm benchmarked	hash3
+Algorithm benchmarked	hash5
+Algorithm benchmarked	hash8
+Algorithm benchmarked	hc1
+Algorithm benchmarked	hc2
+Algorithm benchmarked	hc3
+Algorithm benchmarked	hc4
+Algorithm benchmarked	hc5
+Algorithm benchmarked	hc6
+Algorithm benchmarked	hc7
+Algorithm benchmarked	hc8
+Algorithm benchmarked	iom
+Algorithm benchmarked	kbndm
+Algorithm benchmarked	lbndm
+Algorithm benchmarked	qf161
+Algorithm benchmarked	qf26
+Algorithm benchmarked	qf34
+Algorithm benchmarked	qf43
+Algorithm benchmarked	qf62
+Algorithm benchmarked	sbndmq2
+Algorithm benchmarked	sbndmq4
+Algorithm benchmarked	sbndmq6
+Algorithm benchmarked	sbndmq8
+Algorithm benchmarked	thc1
+Algorithm benchmarked	thc2
+Algorithm benchmarked	thc3
+Algorithm benchmarked	thc4
+Algorithm benchmarked	thc5
+Algorithm benchmarked	thc6
+Algorithm benchmarked	thc7
+Algorithm benchmarked	thc8
+Algorithm benchmarked	twfr2
+Algorithm benchmarked	twfr3
+Algorithm benchmarked	twfr4
+Algorithm benchmarked	twfr5
+Algorithm benchmarked	twfr6
+Algorithm benchmarked	twfr7
+Algorithm benchmarked	twfr8
+Algorithm benchmarked	ufm1
+Algorithm benchmarked	ufm10
+Algorithm benchmarked	ufm2
+Algorithm benchmarked	ufm3
+Algorithm benchmarked	ufm4
+Algorithm benchmarked	ufm5
+Algorithm benchmarked	ufm6
+Algorithm benchmarked	ufm7
+Algorithm benchmarked	ufm8
+Algorithm benchmarked	ufm9
+Algorithm benchmarked	wfr
+Algorithm benchmarked	wfr2
+Algorithm benchmarked	wfr3
+Algorithm benchmarked	wfr4
+Algorithm benchmarked	wfr5
+Algorithm benchmarked	wfr6
+Algorithm benchmarked	wfr7
+Algorithm benchmarked	wfr8
+Algorithm benchmarked	wom
+Process pinned to CPU number	3
+Started benchmarking	2023:05:10 08:51:59
+Finished benchmarking	2023:05:10 11:43:00
